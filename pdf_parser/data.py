@@ -3,17 +3,16 @@ from datetime import datetime
 
 
 @dataclass
-class LotData:
+class LotDataTable:
     """Class for storing lot data"""
-    lot: str
-    lot_name: str
-    customer_name: str
-    customer_address: str
-    planned_unit_price: int
-    planned_total_price: int
-    measurment_unit: str
-    amount: int
-
+    lot_number: str = None
+    lot_name: str = None
+    customer_name: str = None
+    customer_address: str = None
+    planned_unit_price: int = None
+    planned_total_price: int = None
+    measurment_unit: str = None
+    amount: int = None
 
 @dataclass
 class DeniedSuppliersTable:
@@ -25,10 +24,11 @@ class DeniedSuppliersTable:
 
 
 @dataclass
-class WonAndPotentialSuppliersTable:
-    """Class for storing third table with one winner and potential suppliers"""
+class ResultsTable:
+    """Class for storing a table with one winner and potential suppliers"""
     serial_number: int
     supplier_name: str
+    bin_iin_inn_unp: int
     unit_price: int
     total_price: int
     date_time: datetime

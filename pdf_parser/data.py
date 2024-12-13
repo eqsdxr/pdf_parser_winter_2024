@@ -15,20 +15,26 @@ class LotDataTable:
     amount: int = None
 
 @dataclass
-class DeniedSuppliersTable:
+class DeniedSuppliersRow:
     """Class for storing denied suppliers"""
     serial_number: int
     supplier_name: str
     bin_iin_unp: int
     reason_for_deviation: str
 
-
 @dataclass
-class ResultsTable:
-    """Class for storing a table with one winner and potential suppliers"""
+class ResultsRow:
+    """Class for storing a rows with one winner and potential suppliers"""
     serial_number: int
     supplier_name: str
     bin_iin_inn_unp: int
     unit_price: int
     total_price: int
     date_time: datetime
+
+@dataclass
+class TableGroup:
+    """Class for storing set of three tables (lot, denied, results)"""
+    lot_data_table: LotDataTable
+    denied_suppliers_table: DeniedSuppliersRow
+    results_table: ResultsRow

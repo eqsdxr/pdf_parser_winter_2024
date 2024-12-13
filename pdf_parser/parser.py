@@ -4,7 +4,7 @@ import pprint
 
 from pdf_parser import utils
 
-from pdf_parser.data import ResultsTable, LotDataTable, DeniedSuppliersTable
+from pdf_parser.data import ResultsRow, LotDataTable, DeniedSuppliersRow
 
 from typing import Any
 
@@ -35,10 +35,10 @@ class Parser:
                 self.tabs.append(i.extract())
         return self.tabs
 
-    def results_table(self, tab) -> list[ResultsTable]:
+    def results_table(self, tab) -> list[ResultsRow]:
         """
         Function that fetches all tables with results from a pdf file and
-        stores them as a list of ResultsTable dataclass instances.
+        stores them as a list of ResultsRow dataclass instances.
 
         Results table is a table where potential suppliers and one winner are
         represented. Make sure that you extracted all tables from a pdf.
@@ -54,7 +54,7 @@ class Parser:
             # Parse date_time assuming the fifth column in a table row
             # is the date string. If not then it will raise an exception.
             date_time = datetime.datetime.strptime(row[5], '%Y-%m-%d %H:%M:%S.%f')
-            results.append(ResultsTable(
+            results.append(ResultsRow(
                 serial_number=int(row[0]),
                 supplier_name=row[1],
                 bin_iin_inn_unp=row[2],
@@ -96,10 +96,12 @@ class Parser:
         lot = LotDataTable()
 
         for i in tab:
+            print(i[0])
             match i[0]:
                 # kz
-                case 'Лоттың No':
-                    lot.lot_number = i[1] # see example to understand why it is i[1]
+                case 'Лоттың №':
+                    # see the example about to understand why it is i[1]
+                    lot.lot_number = i[1]
                 case 'Лоттың атауы':
                     lot.lot_name = i[1]
                 case 'Тапсырыс берушінің атауы':
@@ -107,17 +109,17 @@ class Parser:
                 case 'Тапсырыс берушінің мекенжайы':
                     lot.customer_address = i[1]
                 case 'Бірлік, теңге үшін жоспарланған баға':
-                    lot.planned_unit_price = i[1]
+                    lot.planned_unit_price = int(i[1])
                 case 'Жоспарланған сома, теңге':
                     lot.planned_total_price = i[1]
                 case 'Өлшем бірлігі':
                     lot.measurment_unit = i[1]
                 case 'Саны':
-                    lot.amount = i[1]
+                    lot.amount = int(i[1])
                 # ru
-                case 'Лот No':
-                    lot.lot = i[1]
-                case 'Наименование лота ':
+                case 'Лот №':
+                    lot.lot_number = i[1]
+                case 'Наименование лота':
                     lot.lot_name = i[1]
                 case 'Наименование заказчика':
                     lot.customer_name = i[1]
@@ -134,7 +136,7 @@ class Parser:
 
         return lot
     
-    def denied_table(self, tab: list[list]) -> DeniedSuppliersTable:
+    def denied_table(self, tab: list[list]) -> DeniedSuppliersRow:
         """
         It works because every row is a independed data unit.
         """
@@ -144,7 +146,7 @@ class Parser:
             tab = tab[1:]
         for row in tab:
             denied.append(
-                DeniedSuppliersTable(
+                DeniedSuppliersRow(
                     serial_number = int(row[0]),
                     supplier_name = row[1],
                     bin_iin_unp = int(row[2]),
@@ -153,15 +155,11 @@ class Parser:
             )
         return denied
 
-
-
     def get_all_data(self) -> list[list[Any]]:
 
         utils.check_data(self.tabs)
         
-        lot = None
-        denied = None
-        result = None
+        lot = denied = result = None
 
         for tab in self.tabs:
             if len(tab[0]) == 2:
@@ -173,7 +171,7 @@ class Parser:
 
             if lot and denied and result:
                 self.data.append([lot, denied, result])
-
+                lot = denied = result = None
         return self.data
 
 

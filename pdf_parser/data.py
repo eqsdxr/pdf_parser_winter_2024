@@ -4,7 +4,7 @@ from datetime import datetime
 
 @dataclass
 class LotDataTable:
-    """Class for storing lot data"""
+    '''Class for storing lot data'''
     lot_number: str = None
     lot_name: str = None
     customer_name: str = None
@@ -16,7 +16,7 @@ class LotDataTable:
 
 @dataclass
 class DeniedSuppliersRow:
-    """Class for storing denied suppliers"""
+    '''Class for storing denied suppliers'''
     serial_number: int
     supplier_name: str
     bin_iin_unp: int
@@ -24,7 +24,7 @@ class DeniedSuppliersRow:
 
 @dataclass
 class ResultsRow:
-    """Class for storing a rows with one winner and potential suppliers"""
+    '''Class for storing a rows with one winner and potential suppliers'''
     serial_number: int
     supplier_name: str
     bin_iin_inn_unp: int
@@ -33,8 +33,8 @@ class ResultsRow:
     date_time: datetime
 
 @dataclass
-class TableGroup:
-    """Class for storing set of three tables (lot, denied, results)"""
+class ThreeTablesLDR:
+    '''Class for storing a unit of three tables (lot, denied, results)'''
     lot_data_table: LotDataTable
-    denied_suppliers_table: DeniedSuppliersRow
-    results_table: ResultsRow
+    denied_suppliers_table: list[DeniedSuppliersRow]
+    results_table: list[ResultsRow]

@@ -4,12 +4,12 @@ import pprint
 
 from pdf_parser import utils
 
-from pdf_parser.data import ResultsRow, LotDataTable, DeniedSuppliersRow
+from pdf_parser import data
 
-from typing import Any
+from typing import Any, Optional
 
 class Parser:
-    """
+    '''
     Class for all parser logic.
 
     The main logic of parsing table functions is built on
@@ -17,57 +17,26 @@ class Parser:
     types of tables can only be of specific length.
 
     We can only proceed the list of all data at once.
-    """
+    '''
     def __init__(self) -> None:
-        self.tabs = [] # tables
-        self.data = [] # dataclasses
+        pass
 
     def open_pdf(self, pdf_path: str) -> fitz.Document:
         pdf = fitz.open(pdf_path)
-        self.pdf = pdf
         return pdf
 
-    def extract_tables_from_pdf(self) -> list[list]:
-        """It is possible to only find all tables at once and then sort them"""
-        for page in self.pdf:
-            tabs: fitz.Page.TableFinder = page.find_tables()
-            for i in tabs:
-                self.tabs.append(i.extract())
-        return self.tabs
+    def extract_tables_from_pdf(self, pdf: fitz.Document) -> list[list]:
+        '''It is possible to only find all tables at once and then sort them'''
+        document_tabs = []
+        for page in pdf:
+            page_tabs: fitz.Page.TableFinder = page.find_tables()
+            for i in page_tabs:
+                document_tabs.append(i.extract())
+        return document_tabs
 
-    def results_table(self, tab) -> list[ResultsRow]:
-        """
-        Function that fetches all tables with results from a pdf file and
-        stores them as a list of ResultsRow dataclass instances.
-
-        Results table is a table where potential suppliers and one winner are
-        represented. Make sure that you extracted all tables from a pdf.
-        """
-    
-        results = []
-
-        for row in tab:
-            if (row[1] == "Наименование поставщика" or
-                row[1] == "Өнім берушінің атауы"):
-                continue
-
-            # Parse date_time assuming the fifth column in a table row
-            # is the date string. If not then it will raise an exception.
-            date_time = datetime.datetime.strptime(row[5], '%Y-%m-%d %H:%M:%S.%f')
-            results.append(ResultsRow(
-                serial_number=int(row[0]),
-                supplier_name=row[1],
-                bin_iin_inn_unp=row[2],
-                unit_price=int(row[3]),
-                total_price=int(row[4]),
-                date_time=date_time
-            ))
-
-        return results
-    
-    def lot_table(self, tab: list) -> list[LotDataTable]:
-        """
-        Function fetches data from a table with information about lots.
+    def fetch_lot_table(self, tab: list) -> list[data.LotDataTable]:
+        '''
+        Fetches data from a table with information about lots.
 
         Sometimes a table can be dissected by a page break so it hard to
         fetch everything corectly, so I decided to use match-case
@@ -79,9 +48,9 @@ class Parser:
             ['Лот №', '69106193-ЗЦП1'],
             ['Наименование лота', 'Услуги по технической поддержке сайтов'],
             ['Наименование заказчика',
-            'КГУ "Централизованная библиотечная система "Отырар" Отырарского района" '
+            'КГУ 'Централизованная библиотечная система 'Отырар' Отырарского района' '
             'отдела культуры, развития языков,\n'
-            'физической культуры и спорта Отырарского района"'],
+            'физической культуры и спорта Отырарского района''],
             ['Адрес заказчика',
             '614830100, 160700, Казахстан, г. Ш?УІЛДІР АУЫЛЫ, ул. НУРТАС ОНДАСЫНОВ, д. '
             '2, оф.'],
@@ -91,12 +60,11 @@ class Parser:
             ['Количество', '1']
         ]
 
-        """
+        '''
 
-        lot = LotDataTable()
+        lot = data.LotDataTable()
 
         for i in tab:
-            print(i[0])
             match i[0]:
                 # kz
                 case 'Лоттың №':
@@ -108,14 +76,24 @@ class Parser:
                     lot.customer_name = i[1]
                 case 'Тапсырыс берушінің мекенжайы':
                     lot.customer_address = i[1]
+
+                # checking for a field with word wrapping
                 case 'Бірлік, теңге үшін жоспарланған баға':
-                    lot.planned_unit_price = int(i[1])
+                    lot.planned_unit_price = i[1]
+                case 'Бірлік, теңге үшін жоспарланған \nбаға':
+                    lot.planned_unit_price = i[1]
+                case 'Бірлік, теңге үшін жоспарланған\nбаға':
+                    lot.planned_unit_price = i[1]
+                case 'Бірлік, теңге үшін жоспарланған\n баға':
+                    lot.planned_unit_price = i[1]
+                # end of checking for a field with word wrapping
+
                 case 'Жоспарланған сома, теңге':
                     lot.planned_total_price = i[1]
                 case 'Өлшем бірлігі':
                     lot.measurment_unit = i[1]
                 case 'Саны':
-                    lot.amount = int(i[1])
+                    lot.amount = i[1]
                 # ru
                 case 'Лот №':
                     lot.lot_number = i[1]
@@ -123,10 +101,20 @@ class Parser:
                     lot.lot_name = i[1]
                 case 'Наименование заказчика':
                     lot.customer_name = i[1]
-                case 'Адрес заказчика ':
+                case 'Адрес заказчика':
                     lot.customer_address = i[1]
+                    
+                # checking for a field with word wrapping
                 case 'Запланированная цена за единицу, тенге':
                     lot.planned_unit_price = i[1]
+                case 'Запланированная цена за \nединицу, тенге':
+                    lot.planned_unit_price = i[1]
+                case 'Запланированная цена за\nединицу, тенге':
+                    lot.planned_unit_price = i[1]
+                case 'Запланированная цена за\n единицу, тенге':
+                    lot.planned_unit_price = i[1]
+                # end of checking for a field with word wrapping
+
                 case 'Запланированная сумма, тенге':
                     lot.planned_total_price = i[1]
                 case 'Единица измерения':
@@ -135,44 +123,103 @@ class Parser:
                     lot.amount = i[1]
 
         return lot
-    
-    def denied_table(self, tab: list[list]) -> DeniedSuppliersRow:
-        """
+
+    def fetch_denied_table(
+            self,
+            tab: list[list]
+        ) -> list[data.DeniedSuppliersRow]:
+        '''
         It works because every row is a independed data unit.
-        """
+        '''
         denied = []
         if (tab[0][1] == 'Наименование поставщика' or
             tab[0][1] == 'Өнім берушінің атауы'):
             tab = tab[1:]
         for row in tab:
             denied.append(
-                DeniedSuppliersRow(
-                    serial_number = int(row[0]),
+                data.DeniedSuppliersRow(
+                    serial_number = row[0],
                     supplier_name = row[1],
-                    bin_iin_unp = int(row[2]),
+                    bin_iin_unp = row[2],
                     reason_for_deviation = row[3]
                 )
             )
         return denied
 
-    def get_all_data(self) -> list[list[Any]]:
+    def fetch_results_table(self, tab) -> list[data.ResultsRow]:
+        '''
+        Fetches all tables with results from a pdf file and
+        stores them as a list of ResultsTable dataclass instances.
 
-        utils.check_data(self.tabs)
-        
-        lot = denied = result = None
+        Results table is a table where potential suppliers and one winner are
+        represented. Make sure that you extracted all tables from a pdf.
+        '''
+    
+        results = []
 
-        for tab in self.tabs:
+        for row in tab:
+            if (row[1] == 'Наименование поставщика' or
+                row[1] == 'Өнім берушінің атауы'):
+                continue
+
+            # Parse date_time assuming the fifth column in a table row
+            # is the date string. If not then it will raise an exception.
+            date_time = datetime.datetime.strptime(
+                row[5], 
+                '%Y-%m-%d %H:%M:%S.%f'
+            )
+            results.append(data.ResultsRow(
+                serial_number=row[0],
+                supplier_name=row[1],
+                bin_iin_inn_unp=row[2],
+                unit_price=row[3],
+                total_price=row[4],
+                date_time=date_time
+            ))
+
+        return results
+
+    def fetch_all_data(
+            self,
+            tabs: list
+        ) -> list[data.ThreeTablesLDR]:
+        '''
+        Uses all fetch functions and gather all information from the files.
+        '''
+        utils.check_data(tabs)
+
+        output = []
+
+        lot = denied = result = []
+
+        flag = False # were all tables proceeded
+
+        for tab in tabs:
             if len(tab[0]) == 2:
-                lot = self.lot_table(tab)
+                lot = self.fetch_lot_table(tab)
+                # print(lot)
             elif len(tab[0]) == 4:
-                denied = self.denied_table(tab)
+                denied = self.fetch_denied_table(tab)
+                # print(denied)
             elif len(tab[0]) == 6:
-                result = self.results_table(tab)
+                result = self.fetch_results_table(tab)
+                # print(result)
+                flag = True
 
-            if lot and denied and result:
-                self.data.append([lot, denied, result])
-                lot = denied = result = None
-        return self.data
+            if flag: # all the tables are in a pdf
+                output.append(
+                    data.ThreeTablesLDR(
+                        lot_data_table=lot,
+                        denied_suppliers_table=denied,
+                        results_table=result
+                    )
+                )
+
+                lot = denied = result = [] # !!!!!
+                flag = False
+
+
+        return output
 
 
     

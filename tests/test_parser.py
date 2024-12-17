@@ -32,19 +32,18 @@ class TestParser:
         actual_pdf_document = self.p.open_pdf(correct_pdf_path)
         assert isinstance(actual_pdf_document, expected_pdf_object)
 
-    def test_fetch_all_data(self):
+    def test_proceed_pdf(self):
         '''
         Tests number of ThreeTablesLDR in results of 
         fetching each test file.
         '''
         for i in range(1, self.last_file_number + 1):
             pdf = self.p.open_pdf(self.pdf_dir_path / f'{i}.pdf')
-            tables = self.p.extract_tables_from_pdf(pdf)
-            data = self.p.fetch_all_data(tables)
+            data = self.p.proceed_pdf(pdf)
             n = len(data)
             if i == 3: # this file has 12 tables instead of 6 and 4 three-table units
                 n = 4
-            elif i < 31: # needs to be increased
+            elif i < 31: # there's 53 actually
                 n == 2
 
 

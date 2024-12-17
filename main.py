@@ -8,7 +8,6 @@ from memory_profiler import memory_usage
 
 p = parser.Parser()
 pdf_path = BASE_DIR / 'tests' / 'test_pdfs'
-data = []
 for i in range(1, 54):
     pdf = pdf_path / f'{i}.pdf'
     data = p.proceed_pdf(pdf)

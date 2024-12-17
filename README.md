@@ -17,5 +17,3 @@ To run tests use:
 ```
 pytest
 ```
-
-To see memory consumption remove '#' near '@profile' in parser.py

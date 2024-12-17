@@ -1,9 +1,6 @@
-from collections.abc import Callable
-from time import time
-from memory_profiler import memory_usage
-
-from typing import Any
-
+# from collections.abc import Callable
+# from time import time
+# from memory_profiler import memory_usage
 
 def check_data(data: list) -> None:
     '''

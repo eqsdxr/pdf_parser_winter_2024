@@ -3,9 +3,7 @@ import datetime
 
 from pdf_parser import utils, data
 
-from typing import Any, Optional
-
-from memory_profiler import profile
+# from memory_profiler import profile
 
 class Parser:
     '''

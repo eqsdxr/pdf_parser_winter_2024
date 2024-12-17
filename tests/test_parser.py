@@ -4,10 +4,7 @@ import pymupdf
 
 from dataclasses import fields, is_dataclass
 
-from pdf_parser import parser, data as data_module
-
-import pprint
-
+from pdf_parser import parser
 
 class TestParser:
 

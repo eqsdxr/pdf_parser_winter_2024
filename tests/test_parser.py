@@ -16,7 +16,8 @@ class TestParser:
         # It's used for for-loops because all test PDF filenames
         # follow the pattern: (number in sequence).pdf
         self.last_file_number = 53
-    def test_open_pdf(self):
+
+    def test_open_pdf_from_path(self):
         '''
         Tests if the function for opening pdfs works OK.
         '''
@@ -24,12 +25,12 @@ class TestParser:
         invalid_pdf_path = self.pdf_dir_path / 'nonexistent.pdf'
 
         with pytest.raises(pymupdf.FileNotFoundError):
-            self.p.open_pdf(invalid_pdf_path)
+            self.p.open_pdf_from_path(invalid_pdf_path)
 
-        assert self.p.open_pdf(correct_pdf_path)
+        assert self.p.open_pdf_from_path(correct_pdf_path)
 
         expected_pdf_object = pymupdf.Document
-        actual_pdf_document = self.p.open_pdf(correct_pdf_path)
+        actual_pdf_document = self.p.open_pdf_from_path(correct_pdf_path)
         assert isinstance(actual_pdf_document, expected_pdf_object)
 
     def test_proceed_pdf(self):
@@ -38,14 +39,14 @@ class TestParser:
         fetching each test file.
         '''
         for i in range(1, self.last_file_number + 1):
-            pdf = self.p.open_pdf(self.pdf_dir_path / f'{i}.pdf')
+            with open(self.pdf_dir_path / f'{i}.pdf', 'rb') as f:
+                pdf = f.read()
             data = self.p.proceed_pdf(pdf)
             n = len(data)
             if i == 3: # this file has 12 tables instead of 6 and 4 three-table units
                 n = 4
             elif i < 31: # there's 53 actually
                 n == 2
-
 
     def test_check_if_theres_no_none_values(self):
         '''
@@ -76,7 +77,9 @@ class TestParser:
                     recursively_check_values(field_value)
                 
         for i in range(1, self.last_file_number + 1):
-            pdf = self.p.open_pdf(self.pdf_dir_path / f'{i}.pdf')
+            with open(self.pdf_dir_path / f'{i}.pdf', 'rb') as f:
+                pdf = f.read()
+            pdf = self.p.open_pdf_from_path(self.pdf_dir_path / f'{i}.pdf')
             tables = self.p.extract_tables_from_pdf(pdf)
             data = self.p.fetch_all_data(tables)
             recursively_check_values(data)

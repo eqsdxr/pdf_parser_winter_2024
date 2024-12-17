@@ -5,6 +5,7 @@ from pdf_parser import utils, data
 
 # from memory_profiler import profile
 
+
 class Parser:
     '''
     Class for all parser logic.
@@ -18,9 +19,13 @@ class Parser:
     def __init__(self) -> None:
         pass
     
-    def open_pdf(self, pdf_path: str) -> fitz.Document:
+    def open_pdf_from_path(self, pdf_path: str) -> fitz.Document:
         pdf = fitz.open(pdf_path)
         return pdf
+    
+    def process_pdf_from_bytes(self, pdf_bytes) -> fitz.Document:    
+        pdf_document = fitz.open("pdf", pdf_bytes)
+        return pdf_document
 
     # the most time consuming function (~99% of time)
     def extract_tables_from_pdf(self, pdf: fitz.Document) -> list[list]:
@@ -223,11 +228,18 @@ class Parser:
 
         return output
     
-    def proceed_pdf(self, pdf_path) -> list[data.ThreeTablesLDR]:
+    def proceed_pdf(self, pdf: str) -> list[data.ThreeTablesLDR]:
 
-        pdf = self.open_pdf(pdf_path)
+        if isinstance(pdf, str) and 'http' not in pdf:
+            pdf_obj = self.open_pdf_from_path(pdf)
+        elif isinstance(pdf, bytes):
+            pdf_obj = self.process_pdf_from_bytes(pdf)
+        else:
+            raise TypeError(
+                'Provide pdf in bytes or provide local path to pdf.'
+            )
 
-        tabs = self.extract_tables_from_pdf(pdf)
+        tabs = self.extract_tables_from_pdf(pdf_obj)
 
         data = self.fetch_all_data(tabs)
 

@@ -13,7 +13,7 @@ def check_data(data: list) -> None:
     for using within Parser class.
     '''
     
-    if not data or len(data) < 4:
+    if not data or len(data) < 4 or not isinstance(data, list):
         raise Exception(f'Data is empty or corrupted.\n{data}')
 
 

@@ -14,5 +14,6 @@ data = []
 for i in range(1, 54):
     pdf = pdf_path / f'{i}.pdf'
     data = p.proceed_pdf(pdf)
-    pprint.pprint(data)
+    # pprint.pprint(data)
+    # print(data[0].lot_data_table.lot_number)
 # time

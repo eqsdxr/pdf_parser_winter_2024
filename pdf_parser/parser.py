@@ -1,12 +1,13 @@
 import fitz # type: ignore # PyMuPDF alias
 import datetime
-import pprint
 
-from pdf_parser import utils
-
-from pdf_parser import data
+from pdf_parser import utils, data
 
 from typing import Any, Optional
+
+from pdf_parser.setup_loger import logger
+
+from memory_profiler import profile
 
 class Parser:
     '''
@@ -20,11 +21,16 @@ class Parser:
     '''
     def __init__(self) -> None:
         pass
-
+    
+    @utils.measure_time
+    # @profile
     def open_pdf(self, pdf_path: str) -> fitz.Document:
         pdf = fitz.open(pdf_path)
         return pdf
 
+    # the most time consuming function (~99%)
+    @utils.measure_time
+    # @profile
     def extract_tables_from_pdf(self, pdf: fitz.Document) -> list[list]:
         '''It is possible to only find all tables at once and then sort them'''
         document_tabs = []
@@ -66,9 +72,10 @@ class Parser:
 
         for i in tab:
             match i[0]:
+                # all values that can be converted, converted here, others cannot
                 # kz
                 case 'Лоттың №':
-                    # see the example about to understand why it is i[1]
+                    # see the docstring about to understand why it is i[1]
                     lot.lot_number = i[1]
                 case 'Лоттың атауы':
                     lot.lot_name = i[1]
@@ -79,21 +86,21 @@ class Parser:
 
                 # checking for a field with word wrapping
                 case 'Бірлік, теңге үшін жоспарланған баға':
-                    lot.planned_unit_price = i[1]
+                    lot.planned_unit_price = utils.cast_to_int_float(i[1])
                 case 'Бірлік, теңге үшін жоспарланған \nбаға':
-                    lot.planned_unit_price = i[1]
+                    lot.planned_unit_price = utils.cast_to_int_float(i[1])
                 case 'Бірлік, теңге үшін жоспарланған\nбаға':
-                    lot.planned_unit_price = i[1]
+                    lot.planned_unit_price = utils.cast_to_int_float(i[1])
                 case 'Бірлік, теңге үшін жоспарланған\n баға':
-                    lot.planned_unit_price = i[1]
+                    lot.planned_unit_price = utils.cast_to_int_float(i[1])
                 # end of checking for a field with word wrapping
 
                 case 'Жоспарланған сома, теңге':
-                    lot.planned_total_price = i[1]
+                    lot.planned_total_price = utils.cast_to_int_float(i[1])
                 case 'Өлшем бірлігі':
                     lot.measurment_unit = i[1]
                 case 'Саны':
-                    lot.amount = i[1]
+                    lot.amount = utils.cast_to_int_float(i[1])
                 # ru
                 case 'Лот №':
                     lot.lot_number = i[1]
@@ -106,24 +113,26 @@ class Parser:
                     
                 # checking for a field with word wrapping
                 case 'Запланированная цена за единицу, тенге':
-                    lot.planned_unit_price = i[1]
+                    lot.planned_unit_price = utils.cast_to_int_float(i[1])
                 case 'Запланированная цена за \nединицу, тенге':
-                    lot.planned_unit_price = i[1]
+                    lot.planned_unit_price = utils.cast_to_int_float(i[1])
                 case 'Запланированная цена за\nединицу, тенге':
-                    lot.planned_unit_price = i[1]
+                    lot.planned_unit_price = utils.cast_to_int_float(i[1])
                 case 'Запланированная цена за\n единицу, тенге':
-                    lot.planned_unit_price = i[1]
+                    lot.planned_unit_price = utils.cast_to_int_float(i[1])
                 # end of checking for a field with word wrapping
 
                 case 'Запланированная сумма, тенге':
-                    lot.planned_total_price = i[1]
+                    lot.planned_total_price = utils.cast_to_int_float(i[1])
                 case 'Единица измерения':
                     lot.measurment_unit = i[1]
                 case 'Количество':
-                    lot.amount = i[1]
+                    lot.amount = utils.cast_to_int_float(i[1])
 
         return lot
 
+    @utils.measure_time
+    # @profile
     def fetch_denied_table(
             self,
             tab: list[list]
@@ -138,14 +147,16 @@ class Parser:
         for row in tab:
             denied.append(
                 data.DeniedSuppliersRow(
-                    serial_number = row[0],
+                    serial_number = utils.cast_to_int_float(row[0]),
                     supplier_name = row[1],
-                    bin_iin_unp = row[2],
+                    bin_iin_unp = utils.cast_to_int_float(row[2]),
                     reason_for_deviation = row[3]
                 )
             )
         return denied
 
+    @utils.measure_time
+    # @profile
     def fetch_results_table(self, tab) -> list[data.ResultsRow]:
         '''
         Fetches all tables with results from a pdf file and
@@ -169,57 +180,78 @@ class Parser:
                 '%Y-%m-%d %H:%M:%S.%f'
             )
             results.append(data.ResultsRow(
-                serial_number=row[0],
+                serial_number=utils.cast_to_int_float(row[0]),
                 supplier_name=row[1],
-                bin_iin_inn_unp=row[2],
-                unit_price=row[3],
-                total_price=row[4],
+                bin_iin_inn_unp=utils.cast_to_int_float(row[2]),
+                unit_price=utils.cast_to_int_float(row[3]),
+                total_price=utils.cast_to_int_float(row[4]),
                 date_time=date_time
             ))
 
         return results
 
-    def fetch_all_data(
-            self,
-            tabs: list
-        ) -> list[data.ThreeTablesLDR]:
+    # this function was mainly written by ChatGPT after I gave them my initial function
+    @utils.measure_time
+    # @profile
+    def fetch_all_data(self, tabs: list) -> list:
         '''
-        Uses all fetch functions and gather all information from the files.
+        Uses all fetch functions and gathers information from the files.
         '''
         utils.check_data(tabs)
 
         output = []
+        lot, denied, result = [], [], []  # Separately initialize lists to avoid shared references
 
-        lot = denied = result = []
-
-        flag = False # were all tables proceeded
+        last_table_len = 0
 
         for tab in tabs:
             if len(tab[0]) == 2:
-                lot = self.fetch_lot_table(tab)
-                # print(lot)
-            elif len(tab[0]) == 4:
-                denied = self.fetch_denied_table(tab)
-                # print(denied)
-            elif len(tab[0]) == 6:
-                result = self.fetch_results_table(tab)
-                # print(result)
-                flag = True
-
-            if flag: # all the tables are in a pdf
-                output.append(
-                    data.ThreeTablesLDR(
-                        lot_data_table=lot,
-                        denied_suppliers_table=denied,
-                        results_table=result
+                if last_table_len == 6:
+                    output.append(
+                        data.ThreeTablesLDR(
+                            lot_data_table=lot,
+                            denied_suppliers_table=denied,
+                            results_table=result
+                        )
                     )
+                    lot, denied, result = [], [], []  # Clear lists after appending to output
+                lot = self.fetch_lot_table(tab)
+                last_table_len = 2
+
+            elif len(tab[0]) == 4:
+                denied = self.fetch_denied_table(tab) if last_table_len != 4 else denied + self.fetch_denied_table(tab)
+                last_table_len = 4
+
+            elif len(tab[0]) == 6:
+                result = self.fetch_results_table(tab) if last_table_len != 6 else result + self.fetch_results_table(tab)
+                last_table_len = 6
+
+        if lot or denied or result:
+            output.append(
+                data.ThreeTablesLDR(
+                    lot_data_table=lot,
+                    denied_suppliers_table=denied,
+                    results_table=result
                 )
-
-                lot = denied = result = [] # !!!!!
-                flag = False
-
+            )
 
         return output
+    
+    @utils.measure_time
+    # @profile
+    def proceed_pdf(self, pdf_path) -> list[data.ThreeTablesLDR]:
+        logger.info(f'proceeding pdf with name {pdf_path}')
+
+        # logger.info('Opening pdf.')
+        pdf = self.open_pdf(pdf_path)
+
+        # logger.info('Extracting tables from pdf.')
+        tabs = self.extract_tables_from_pdf(pdf)
+
+        # logger.info('Proceeding tables.')
+        data = self.fetch_all_data(tabs)
+
+        return data
 
 
     

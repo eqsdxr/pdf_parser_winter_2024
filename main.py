@@ -1,18 +1,18 @@
 from pdf_parser import parser # type: ignore
 import pprint
-from pathlib import Path
+
 import json
 
+from pdf_parser.config import BASE_DIR
 
-BASE_DIR = Path().parent
+from memory_profiler import memory_usage
 
 
 p = parser.Parser()
-pdf_path = BASE_DIR / 'tests' / 'test_pdfs' / '15.pdf'
-pdf = p.open_pdf(pdf_path)
-tabs = p.extract_tables_from_pdf(pdf)
-pprint.pprint(tabs)
-data = p.fetch_all_data(tabs)
-n = len(data)
-print(n)
-pprint.pprint(data)
+pdf_path = BASE_DIR / 'tests' / 'test_pdfs'
+data = []
+for i in range(1, 54):
+    pdf = pdf_path / f'{i}.pdf'
+    data = p.proceed_pdf(pdf)
+    pprint.pprint(data)
+# time

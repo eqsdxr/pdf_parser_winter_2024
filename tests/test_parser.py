@@ -18,7 +18,7 @@ class TestParser:
         self.pdf_dir_path = self.BASIC_DIR / 'tests/test_pdfs'
         # It's used for for-loops because all test PDF filenames
         # follow the pattern: (number in sequence).pdf
-        self.last_file_number = 30 
+        self.last_file_number = 53
     def test_open_pdf(self):
         '''
         Tests if the function for opening pdfs works OK.
@@ -47,7 +47,7 @@ class TestParser:
             n = len(data)
             if i == 3: # this file has 12 tables instead of 6 and 4 three-table units
                 n = 4
-            elif i < 31:
+            elif i < 31: # needs to be increased
                 n == 2
 
 

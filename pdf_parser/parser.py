@@ -5,8 +5,6 @@ from pdf_parser import utils, data
 
 from typing import Any, Optional
 
-from pdf_parser.setup_loger import logger
-
 from memory_profiler import profile
 
 class Parser:
@@ -22,15 +20,11 @@ class Parser:
     def __init__(self) -> None:
         pass
     
-    @utils.measure_time
-    # @profile
     def open_pdf(self, pdf_path: str) -> fitz.Document:
         pdf = fitz.open(pdf_path)
         return pdf
 
-    # the most time consuming function (~99%)
-    @utils.measure_time
-    # @profile
+    # the most time consuming function (~99% of time)
     def extract_tables_from_pdf(self, pdf: fitz.Document) -> list[list]:
         '''It is possible to only find all tables at once and then sort them'''
         document_tabs = []
@@ -131,8 +125,6 @@ class Parser:
 
         return lot
 
-    @utils.measure_time
-    # @profile
     def fetch_denied_table(
             self,
             tab: list[list]
@@ -155,8 +147,6 @@ class Parser:
             )
         return denied
 
-    @utils.measure_time
-    # @profile
     def fetch_results_table(self, tab) -> list[data.ResultsRow]:
         '''
         Fetches all tables with results from a pdf file and
@@ -191,8 +181,6 @@ class Parser:
         return results
 
     # this function was mainly written by ChatGPT after I gave them my initial function
-    @utils.measure_time
-    # @profile
     def fetch_all_data(self, tabs: list) -> list:
         '''
         Uses all fetch functions and gathers information from the files.
@@ -237,18 +225,12 @@ class Parser:
 
         return output
     
-    @utils.measure_time
-    # @profile
     def proceed_pdf(self, pdf_path) -> list[data.ThreeTablesLDR]:
-        logger.info(f'proceeding pdf with name {pdf_path}')
 
-        # logger.info('Opening pdf.')
         pdf = self.open_pdf(pdf_path)
 
-        # logger.info('Extracting tables from pdf.')
         tabs = self.extract_tables_from_pdf(pdf)
 
-        # logger.info('Proceeding tables.')
         data = self.fetch_all_data(tabs)
 
         return data

@@ -216,7 +216,7 @@ class Parser:
             elif len(tab[0]) == 6:
                 result = self.fetch_results_table(tab) if last_table_len != 6 else result + self.fetch_results_table(tab)
                 last_table_len = 6
-
+ 
         if lot or denied or result:
             output.append(
                 data.ThreeTablesLDR(

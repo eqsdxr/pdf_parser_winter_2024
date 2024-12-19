@@ -35,7 +35,7 @@ class TestParser:
 
     def test_proceed_pdf(self):
         """
-        Tests number of ThreeTablesLDR in results of 
+        Tests number of ThreeTablesLDR in results of
         fetching each test file.
         """
         for i in range(1, self.last_file_number + 1):
@@ -44,9 +44,9 @@ class TestParser:
             data = self.p.proceed_pdf(pdf)
             n = len(data)
             # this file has 12 tables instead of 6 and 4 three-table units
-            if i == 3: 
+            if i == 3:
                 n = 4
-            elif i < 31: # there"s 53 actually
+            elif i < 31:  # there"s 53 actually
                 n == 2
 
     def test_check_if_theres_no_none_values(self):
@@ -57,8 +57,8 @@ class TestParser:
         """
 
         def recursively_check_values(
-                data: list[parser_data.ThreeTablesLDR],
-            ):
+            data: list[parser_data.ThreeTablesLDR],
+        ):
             """
             Recursively checks for "None" values, not "[]", "()",
             or {} (which is possible for denied tables).
@@ -78,10 +78,9 @@ class TestParser:
                 for field in dataclasses.fields(data):
                     field_value = getattr(data, field.name)
                     recursively_check_values(field_value)
-                
+
         for i in range(1, self.last_file_number + 1):
             with open(self.pdf_dir_path / f"{i}.pdf", "rb") as f:
                 pdf = f.read()
             data = self.p.proceed_pdf(pdf)
-            recursively_check_values(data)   
-        
+            recursively_check_values(data)

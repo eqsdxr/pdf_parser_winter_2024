@@ -1,8 +1,9 @@
-from pdf_parser import parser # type: ignore
+from pdf_parser import parser  # type: ignore
 import pprint
 
 from pdf_parser.config import BASE_DIR
 from memory_profiler import memory_usage
+
 
 def main():
     p = parser.Parser()
@@ -12,6 +13,7 @@ def main():
     data = p.proceed_pdf(pdf)
     pprint.pprint(data)
     # print(data[0].lot_data_table.lot_number)
+
 
 if __name__ == "__main__":
     main()

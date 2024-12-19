@@ -2,6 +2,7 @@ import pytest
 
 from pdf_parser.utils import check_data, cast_to_int_float
 
+
 class TestUtils:
     def test_check_data(self):
         with pytest.raises(Exception):
@@ -19,5 +20,3 @@ class TestUtils:
         assert cast_to_int_float("235458.37") == 235458.37
         assert cast_to_int_float("23457548975348957.3734") == 23457548975348957.3734
         assert cast_to_int_float("235458.37") == 235458.37
-
- 

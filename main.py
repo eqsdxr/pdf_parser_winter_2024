@@ -1,13 +1,10 @@
-from pdf_parser import parser  # type: ignore
+from pdf_parser import parser, config as parser_config
 import pprint
-
-from pdf_parser.config import BASE_DIR
-from memory_profiler import memory_usage
 
 
 def main():
     p = parser.Parser()
-    with open(BASE_DIR / "tests/test_pdfs/1.pdf", "rb") as f:
+    with open(parser_config.BASE_DIR / "tests/test_pdfs/1.pdf", "rb") as f:
         pdf = f.read()
     # pdf = 'tests/test_pdfs/1.pdf'
     data = p.proceed_pdf(pdf)

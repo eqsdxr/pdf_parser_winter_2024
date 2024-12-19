@@ -64,7 +64,7 @@ class TestParser:
             or {} (which is possible for denied tables).
             """
 
-            assert data is not None, f"Found None value"
+            assert data is not None, "Found None value"
 
             if isinstance(data, (list, tuple, dict)):
                 # Iterate over iterable types only if they are not empty
